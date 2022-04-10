@@ -1,0 +1,226 @@
+---
+title: The 2020 - 2021 NBA shooting season is more surprising than you think
+author: Connor Wieseman
+date: '2022-04-08'
+slug: the-2020-2021-nba-shooting-season-is-more-surprising-than-you-think
+categories: []
+tags: []
+---
+In the game of basketball, the team who scores the most amount of points wins. 
+If a team is good at shooting, they will be able to win a lot of games. 
+
+It is a common misconception that defense does not matter in basketball compared to other sports. 
+
+The Milwaukee Bucks won the NBA Finals in 2021. They must have been a good shooting team in the playoffs then, right? 
+
+Wrong. 
+
+The Bucks were ranked 9th out of 16 teams in the playoffs, shooting a field goal percentage of 46.2%. Compared to the number 1 team in the playoffs, the Philadelphia who had a shooting percentage of 47.5%. 
+
+So, how were the Bucks able to win the NBA Finals? 
+
+Defense. 
+```{r message=FALSE, warning=FALSE, echo=FALSE} 
+library(tidyverse)
+library(scales)
+library(waffle)
+library(ggrepel)
+library(gt)
+library(ggalt)
+
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+nbareg <- read_csv("NBA 2020-2021 Regular Season Stats - Sheet1 (1).csv")
+nbaplayoffs <- read_csv("NBA 2020-2021 Playoff Season - Sheet1 (1).csv")
+nbateamshooting <- read_csv("teamshootingstats1.csv")
+nbateamratings <- read_csv("teamratings2021.csv")
+```
+The CSV files contain statistics from the NBA 2020-2021 Regular Season, playoffs, team shooting stats, and overall team offensive and defensive ratings.
+
+
+Lets look at this in reverse order by looking at the playoffs first. 
+
+Most of the top five shooting teams in the playoffs (Utah and Brooklyn were tied for 5th) seem to all make it past the first round.
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ top5fg_percent_playoffs <- nbaplayoffs %>% 
+  select(Team,`FG%`) %>%
+  arrange(desc(`FG%`)) %>% 
+  top_n(5)
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+portland <- top5fg_percent_playoffs %>% 
+  filter(Team == "Portland Trail Blazers")
+```
+
+The Phoenix Suns, the second best shooting team, made their run to the NBA Finals beating the third best shooting team, the Los Angeles Clippers, in the Western Conference Finals. 
+
+The result of the NBA Finals was not in favor of the Suns, but instead, the Bucks.
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() + 
+  geom_bar(data=top5fg_percent_playoffs, aes(x=reorder(Team, `FG%`), weight=`FG%`)) + 
+  geom_bar(data= portland, aes(x=reorder(Team, `FG%`), weight=`FG%`), fill="#CD1041") +
+  scale_y_continuous(labels=comma) + 
+  coord_flip() +
+  labs(title="The NBA Champions aren't in this conversation", subtitle = "Portland didn't even make it pass the first round.", x= "Team", y= "Field Goal Percentage", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme( 
+  plot.title = element_text(size=12.5, face = "bold"), 
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 6),
+  panel.grid.minor = element_blank())
+
+```
+Now lets take a look at the regular season. 
+
+Good shooting teams are usually good enough to make to the playoffs, as the top five regular season teams all qualified to move on to the playoffs. 
+
+Only two teams remained within the top five best in shooting in both the regular season and playoffs.Those teams were the Phoenix Suns and Los Angeles Clippers. 
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+top5fg_percent_reg <- nbareg %>%
+  select(Team,`FG%`) %>%
+  arrange(desc(`FG%`)) %>% 
+  top_n(5)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+nets <- top5fg_percent_reg %>% 
+  filter(Team == "Brooklyn Nets")
+suns <- top5fg_percent_reg %>% 
+  filter(Team == "Phoenix Suns")
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() + 
+   geom_bar(data=top5fg_percent_reg, aes(x=reorder(Team, `FG%`), weight=`FG%`)) +
+   geom_bar(data=nets, aes(x=reorder(Team, `FG%`),weight=`FG%`), fill = "#CD1041") +
+   geom_bar(data=suns, aes(x=reorder(Team, `FG%`), weight = `FG%`), fill = "#1D1160") +
+  scale_y_continuous(labels=comma) + 
+  coord_flip() +
+  labs(title="Brooklyn was .006% away from making half their field goals", subtitle = "Brooklyn and Phoenix are the only teams to shoot over 48%.", x= "Team", y= "Field Goal Percentage", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme( 
+  plot.title = element_text(size=12, face = "bold"),
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 7),
+  panel.grid.minor = element_blank())
+```
+Field goal percentage is calculated by field goals made divided by field goals attempted. In other words, shots made divided by shots taken. 
+
+At the end of a season, teams have a statistic of the average of how many field goals are attempted and made per game. 
+
+There are teams in the NBA that attempt more shots than others, and teams that make more shots than others. 
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+nbateamsshooting_reg <- nbareg 
+bucks <- nbateamsshooting_reg %>% 
+  filter(Team == "Milwaukee Bucks") 
+magic <- nbateamsshooting_reg %>% 
+  filter(Team == "Orlando Magic") 
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() +
+  geom_point(data=nbateamsshooting_reg, aes(x=`FGA`, y=`FG`)) + 
+  geom_point(data=bucks, aes(x=`FGA`, y=`FG`), color="red") + 
+  geom_point(data=magic, aes(x=`FGA`, y=`FG`), color="red") +
+  geom_text_repel(data=bucks, aes(x=`FGA`, y=`FG`, label=Team)) +
+  geom_text_repel(data=magic, aes(x=`FGA`, y=`FG`, label=Team)) +
+  geom_smooth(data=nbateamsshooting_reg, aes(x=`FGA`, y=`FG`), method="lm") + 
+  labs(title="18 Teams shot up to standard", subtitle = "No such thing as Magic in Orlando.", x= "FGA", y= "FG", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme(
+  plot.title = element_text(size=12, face = "bold"),
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 7),
+  panel.grid.minor = element_blank())
+ 
+```
+
+In the playoffs there will be less teams to play. 
+
+If you ever heard the phrase, "Offense wins games, defense wins championships", the playoffs is where that phrase comes in. 
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+nbateamshooting_playoffs <- nbaplayoffs 
+grizzlies <- nbateamshooting_playoffs %>% 
+  filter(Team == "Memphis Grizzlies") 
+lakers <- nbateamshooting_playoffs %>% 
+  filter(Team == "Los Angeles Lakers")
+bucks <-  nbateamshooting_playoffs %>% 
+  filter(Team == "Milwaukee Bucks")
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() +
+  geom_point(data=nbateamshooting_playoffs, aes(x=`FGA`, y=`FG`)) + 
+  geom_point(data=grizzlies, aes(x=`FGA`, y=`FG`), color="red") + 
+  geom_point(data=lakers, aes(x=`FGA`, y=`FG`), color="red") + 
+  geom_point(data=bucks, aes(x=`FGA`, y=`FG`), color="red") + 
+  geom_text_repel(data=grizzlies, aes(x=`FGA`, y=`FG`, label=Team)) + 
+  geom_text_repel(data=lakers, aes(x=`FGA`, y=`FG`, label=Team)) + 
+  geom_text_repel(data=bucks, aes(x=`FGA`, y=`FG`, label=Team)) + 
+  geom_smooth(data=nbateamshooting_playoffs, aes(x=`FGA`, y=`FG`), method="lm") + 
+  labs(title="The Grizzlies were the best shooting team in the playoffs \nOnly to get eliminated in the 1st round", subtitle = "LeBron can't carry.", x= "FGA", y= "FG", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme(
+  plot.title = element_text(size=12, face = "bold"),
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 7),
+  panel.grid.minor = element_blank())
+
+```
+The Bucks and Suns are opposites. The Suns were known for their offense, lead by NBA veteran Chris Paul and Devin Booker. As for the Bucks, they have always had a great defense, with Giannis Antetokounmpo, Jrue Holiday, and Khris Middleton.
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+bucks_rating <- nbateamratings %>%
+  filter(Team == "Milwaukee Bucks") %>% 
+  select(DRtg, ORtg)
+suns_off <- nbateamratings %>% 
+  filter(Team == "Phoenix Suns") %>% 
+  select(DRtg, ORtg) %>%
+  summarise(mean(ORtg))
+suns_def <- nbateamratings %>% 
+  filter(Team == "Phoenix Suns") %>% 
+  select(DRtg, ORtg) %>%
+  summarise(mean(DRtg))
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+bucks_rating <- c("Defense Rating"=112.03 , "Offense Rating"=117.68,0)
+suns_rating<- c("Defense Rating"=112.14, "Offense Rating"=118.01,0.44)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+iron( 
+  waffle( 
+    bucks_rating/2,
+    rows = 5, 
+    colors = c("#00471B", "#EEE1C6", "white")) + 
+    labs(title="Tight ratings equals a tight NBA Finals", subtitle = "With the Suns barely having better ratings, they weren't able to capitalize the title.") +
+  theme(
+   plot.title = element_text(size=12, face = "bold"),
+   plot.title.position = "plot", 
+   axis.title = element_text(size=10),
+   axis.title.y = element_blank()
+  ), 
+  waffle( 
+    suns_rating/2,
+    rows = 5,
+    xlab = "1 square = 2 Rating", 
+    colors = c("#E56020", "#1D1160", "white")) + 
+    labs(caption = "Source: Basketball-Reference | By Connor Wieseman")
+)
+   
+```
+With the Suns having slightly better ratings and starting off the NBA Finals with a 
+2-0 series lead, the Bucks were able to remain calm, as they were able to win the next four games and bring the Larry O'Brien Championship Trophy back to Milwaukee after fifty years. 
+
+The code for this post is [here]().
