@@ -1,0 +1,178 @@
+---
+title: 'What team should win the NBA Finals, based off the regular season? '
+author: Connor Wieseman
+date: '2022-04-21'
+slug: what-team-should-win-the-nba-finals-based-off-the-regular-season
+categories: []
+tags: []
+---
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+library(tidyverse)
+library(scales)
+library(waffle)
+library(ggrepel)
+library(gt)
+library(ggalt)
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+RegSeasonTotalStats <- read_csv("nba2021RegSeasonTotalStats - Sheet1.csv") %>% 
+  mutate(Team = gsub("\\*", "", Team)) 
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+RegSeasonAdvancedStats <- read_csv("nba2021RegSeasonAdvancedStats - Sheet1 (1).csv") %>% 
+  mutate(Team = gsub("\\*", "", Team))
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+RegSeasonTeamShootingStats <- read_csv("nba2021RegSeasonTeamShootingStats - Sheet1.csv") 
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+head(RegSeasonAdvancedStats)
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+top5shootingteams <- RegSeasonTotalStats %>% 
+  select(Team,`FG%`) %>%
+  arrange(desc(`FG%`)) %>% 
+  top_n(5)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+top5shootingteams %>% 
+gt() %>%
+  cols_label(
+    Team = "Team",
+    `FG%` = "FG%"
+  ) %>% 
+  tab_header(
+    title = "Suns remain as a top shooting team from last season",
+    subtitle = "Wizards didn't even make the playoffs"
+  ) %>% 
+  tab_style(
+    style = cell_text(color = "black", weight = "bold", align = "left"),
+    locations = cells_title("title")
+  ) %>% 
+  tab_style(
+  style = cell_text(color = "black", align = "left"),
+    locations = cells_title("subtitle")
+  ) %>%
+  tab_source_note(
+    source_note = md("**Source:** Basketball-Reference | **By** Connor Wieseman")
+  ) %>% 
+   tab_style(
+     locations = cells_column_labels(columns = everything()),
+     style = list(
+       cell_borders(sides = "bottom", weight = px(3)),
+       cell_text(weight = "bold", size=15)
+     )
+   ) %>% 
+ opt_row_striping() %>% 
+ opt_table_lines("none") %>% 
+  fmt_percent(
+    columns = c(`FG%`),
+    decimals = 1
+  ) %>% 
+   tab_style(
+    style = list(
+      cell_fill(color = "#1D1160"),
+      cell_text(color = "white")
+      ),
+    locations = cells_body(
+      rows = Team == "Phoenix Suns")
+) %>% 
+  tab_style(
+    style = list(
+      cell_fill(color = "#E31837"),
+      cell_text(color = "white")
+      ),
+    locations = cells_body(
+      rows = Team == "Washington Wizards") 
+)
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+DefRatings <- RegSeasonAdvancedStats
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+head(RegSeasonAdvancedStats)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+DefRatingsTop5 <- DefRatings %>%
+  select(Team, DRtg) %>%
+  arrange(desc(DRtg)) %>% 
+  top_n(5)
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+hawks <- DefRatingsTop5 %>% 
+  filter(Team == "Atlanta Hawks") 
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+kings <- DefRatingsTop5 %>% 
+  filter(Team == "Sacramento Kings") 
+```
+
+```{r}
+leagueaverage <- DefRatingsTop5 %>% 
+  filter(Team == "League Average") 
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() + 
+  geom_point(data=DefRatingsTop5, aes(x=Team, y=DRtg)) + 
+  geom_point(data=hawks, aes(x=Team, y=DRtg), color="red") + 
+  geom_point(data=kings, aes(x=Team, y=DRtg), color="red") +
+  geom_smooth(data=leagueaverage, aes(x=Team, y=DRtg), method="lm") +
+  scale_y_continuous(limits = c(110,  120)) +
+  labs(title="Hawks had the best defense, just to lose in the first round", subtitle = "With the second best defense, the Kings couldn't make the playoffs.", x= "", y= "Defensive Rating", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme(
+  plot.title = element_text(size=12, face = "bold"),
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 8),
+  panel.grid.minor = element_blank())
+```
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+NetRatings <- RegSeasonAdvancedStats
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+NetRatingsTop5 <- NetRatings %>%
+  select(Team, NRtg) %>%
+  arrange(desc(NRtg)) %>% 
+  top_n(5)
+```
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+phoenix <- NetRatingsTop5 %>% 
+  filter(Team == "Phoenix Suns")
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+boston <- NetRatingsTop5 %>% 
+  filter(Team == "Boston Celtics")
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+ggplot() + 
+  geom_bar(data=NetRatingsTop5, aes(x=reorder(Team, NRtg), weight=NRtg)) + 
+  geom_bar(data=phoenix, aes(x=reorder(Team, NRtg), weight=NRtg), fill = "#1D1160") + geom_bar(data=boston, aes(x=reorder(Team, NRtg), weight=NRtg), fill = "#007A33") +
+  scale_y_continuous(labels=comma) + 
+  labs(title="Phoenix and Boston have exact net rating, potential finals matchup?  ", subtitle = "All these teams remain in the playoffs except Utah", x= "", y= "Net Rating", caption="Source: Basketball-Reference | By Connor Wieseman") + 
+  theme_minimal() + 
+  theme(
+  plot.title = element_text(size=12, face = "bold"),
+  plot.title.position = "plot",
+  axis.title = element_text(size = 10),
+  plot.subtitle = element_text(size = 11),
+  axis.text.x = element_text(size = 7.5),
+  panel.grid.minor = element_blank())
+
+```
+
